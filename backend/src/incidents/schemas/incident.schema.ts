@@ -44,10 +44,10 @@ export class Incident {
     @Prop({ required:true, trim: true })
     description: string;
 
-    @Prop({ required: true, enum: IncidentSeverity , default: IncidentSeverity.Low})
+    @Prop({ required: true, type: String, enum: IncidentSeverity, default: IncidentSeverity.Low })
     severity: IncidentSeverity;
 
-    @Prop({ required: true, enum: IncidentStatus, default: IncidentStatus.Open })
+    @Prop({ type: String, required: true, enum: IncidentStatus, default: IncidentStatus.Open })
     status: IncidentStatus;
 
     @Prop({ type: Types.ObjectId, ref: User.name, required: true })

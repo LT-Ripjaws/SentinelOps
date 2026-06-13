@@ -15,7 +15,7 @@ export class Evidence {
     @Prop({ type: Types.ObjectId, ref: Incident.name , required: true })
     incidentId: Types.ObjectId;
 
-    @Prop({ required: true, enum: EvidenceType })
+    @Prop({ required: true, type: String, enum: EvidenceType })
     type: EvidenceType;
 
     @Prop({required: true})

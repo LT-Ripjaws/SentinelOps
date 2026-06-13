@@ -18,8 +18,11 @@ export class User {
     @Prop({ required: true })
     passwordHash: string;
 
-    @Prop({ required: true, enum: UserRole, default: UserRole.Analyst, })
+    @Prop({ type: String, required: true, enum: UserRole, default: UserRole.Analyst, })
     role: UserRole;
+
+    @Prop()
+    refreshTokenHash?: string;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
