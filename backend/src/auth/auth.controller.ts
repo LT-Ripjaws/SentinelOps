@@ -9,8 +9,8 @@ import { RolesGuard } from './guards/roles.guard';
 import { UserRole } from '../users/user-role.enum';
 import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
 import { ConfigService } from '@nestjs/config';
-import { randomBytes } from 'crypto';
 import { SkipCsrf } from './decorators/skip-csrf.decorator';
+import { CsrfGuard } from './guards/csrf.guard';
 
 
 @Controller('auth')
@@ -21,7 +21,7 @@ export class AuthController {
   ) {}
 
 
-  private setAuthCookies(res: Response, accessToken: string, refreshToken: string) {
+  private setAuthCookies(res: Response, accessToken: string, refreshToken: string, csrfToken: string) {
     const isProduction = this.configService.get<string>('NODE_ENV') === 'production';
 
     res.cookie('accessToken', accessToken, {
@@ -41,7 +41,7 @@ export class AuthController {
   });
 
   
-    res.cookie('csrfToken', randomBytes(32).toString('hex'), {
+    res.cookie('csrfToken', csrfToken, {
     httpOnly: false,                 // intentional: frontend JS must read this
     secure: isProduction,
     sameSite: 'lax',
@@ -76,21 +76,21 @@ export class AuthController {
   async login(@Body() loginDto: LoginDto,
     @Res({ passthrough: true }) res: Response
   ) {
-    const {accessToken, refreshToken} = await this.authService.login(loginDto);
+    const {accessToken, refreshToken, csrfToken} = await this.authService.login(loginDto);
 
-    this.setAuthCookies(res, accessToken, refreshToken);
+    this.setAuthCookies(res, accessToken, refreshToken, csrfToken);
 
     return { message: 'Login successful' };
   }
   
-  @UseGuards(JwtRefreshGuard)
+  @UseGuards(JwtRefreshGuard, CsrfGuard)
   @Post('refresh')
-  async refresh(@Req() req: Request & { user: {sub: string; refreshToken: string}},
+  async refresh(@Req() req: Request & { user: {sub: string; sid: string; refreshToken: string}},
     @Res({passthrough: true}) res: Response)
     {
-      const {accessToken, refreshToken} = await this.authService.refresh(req.user.sub, req.user.refreshToken)
+      const {accessToken, refreshToken, csrfToken} = await this.authService.refresh(req.user.sub, req.user.refreshToken, req.user.sid)
 
-      this.setAuthCookies(res, accessToken, refreshToken);
+      this.setAuthCookies(res, accessToken, refreshToken, csrfToken);
 
       return {message: 'Token Refreshed'}
     }

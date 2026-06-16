@@ -4,6 +4,7 @@ export interface JwtPayload {
     sub: string; // user ID
     email: string;
     role: UserRole;
+    sid: string;
 }
 
 // The JwtPayload interface defines the structure of the payload that will be included in the JWT token. 

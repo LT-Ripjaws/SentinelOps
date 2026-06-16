@@ -8,6 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import { createHmac, timingSafeEqual, randomUUID} from 'crypto';
 import { JwtPayload } from './jwt-payload.interface';
 import type { StringValue } from 'ms';
+import { createSignedCsrfToken } from './csrf-token';
 
 @Injectable()
 export class AuthService {
@@ -16,6 +17,8 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService
   ) {}
+
+ 
 
   private hashToken(token: string): string {
     const secret = this.configService.getOrThrow<string>('JWT_REFRESH_SECRET');
@@ -28,15 +31,21 @@ export class AuthService {
     return bufA.length === bufB.length && timingSafeEqual(bufA, bufB);
   }
 
-  private buildPayload(user: UserDocument): JwtPayload {
-    return { sub: user._id.toString(), email: user.email, role: user.role };
+  private buildPayload(user: UserDocument, sid: string = randomUUID()): JwtPayload {
+    return { sub: user._id.toString(), email: user.email, role: user.role, sid};
+  }
+
+  private createCsrfToken(sid: string): string {
+    return createSignedCsrfToken(
+      this.configService.getOrThrow<string>('CSRF_SECRET'), sid
+    )
   }
 
   private async generateTokens(payload: JwtPayload) {
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload),
       this.jwtService.signAsync(
-        { sub: payload.sub, jti: randomUUID() },
+        { sub: payload.sub, sid: payload.sid, jti: randomUUID() },
         {
           secret: this.configService.getOrThrow<string>('JWT_REFRESH_SECRET'),
           expiresIn: this.configService.get<string>(
@@ -47,11 +56,11 @@ export class AuthService {
       ),
     ]);
 
-    return { accessToken, refreshToken };
+    return { accessToken, refreshToken, csrfToken: this.createCsrfToken(payload.sid) };
   }
 
 
-  async refresh(userId: string, presentedToken: string): Promise<{ accessToken: string; refreshToken: string }> {
+  async refresh(userId: string, presentedToken: string, sid: string): Promise<{ accessToken: string; refreshToken: string; csrfToken: string }> {
     const user = await this.usersService.findById(userId);
 
     if (!user || !user.refreshTokenHash) {
@@ -65,27 +74,27 @@ export class AuthService {
       throw new UnauthorizedException('Refresh Token no longer valid');
     }
 
-    const { accessToken, refreshToken } = await this.generateTokens(this.buildPayload(user));
+    const { accessToken, refreshToken, csrfToken } = await this.generateTokens(this.buildPayload(user, sid));
 
     await this.usersService.setRefreshTokenHash(
       userId,
       this.hashToken(refreshToken)
     );
 
-    return { accessToken, refreshToken };
+    return { accessToken, refreshToken, csrfToken };
   }
 
-  async login(loginDto : LoginDto): Promise<{ accessToken: string; refreshToken: string }> {
+  async login(loginDto : LoginDto): Promise<{ accessToken: string; refreshToken: string; csrfToken: string}> {
 
     const user = await this.validateUser(loginDto);
 
-    const { accessToken, refreshToken } = await this.generateTokens(this.buildPayload(user));
+    const { accessToken, refreshToken, csrfToken} = await this.generateTokens(this.buildPayload(user));
 
     await this.usersService.setRefreshTokenHash(
     user._id.toString(),
     this.hashToken(refreshToken));
 
-    return { accessToken, refreshToken };
+    return { accessToken, refreshToken, csrfToken };
   }
 
   async logout(refreshToken?: string): Promise<void> {

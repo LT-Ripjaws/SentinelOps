@@ -22,11 +22,11 @@ export class JwtRefreshStrategy extends PassportStrategy(
     });
   }
 
-  validate(req: Request, payload: { sub: string }) {
+  validate(req: Request, payload: { sub: string, sid: string }) {
     const refreshToken = req?.cookies?.refreshToken;
     if (!refreshToken) {
       throw new UnauthorizedException('Refresh token missing');
     }
-    return { sub: payload.sub, refreshToken };
+    return { sub: payload.sub, sid: payload.sid, refreshToken };
   }
 }

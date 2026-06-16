@@ -5,7 +5,7 @@ import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 
 describe('AppController (e2e)', () => {
-  let app: INestApplication<App>;
+  let app: INestApplication<App> | undefined;
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -16,7 +16,15 @@ describe('AppController (e2e)', () => {
     await app.init();
   });
 
+  afterEach(async () => {
+    await app?.close();
+  });
+
   it('/ (GET)', () => {
+    if (!app) {
+      throw new Error('Test app did not initialize');
+    }
+
     return request(app.getHttpServer())
       .get('/')
       .expect(200)

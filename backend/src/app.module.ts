@@ -7,8 +7,6 @@ import { UsersModule } from './users/users.module';
 import { IncidentsModule } from './incidents/incidents.module';
 import { EvidenceModule } from './evidence/evidence.module';
 import { AuthModule } from './auth/auth.module';
-import { APP_GUARD } from '@nestjs/core';
-import { CsrfGuard } from './auth/guards/csrf.guard';
 
 @Module({
   imports: [
@@ -36,6 +34,6 @@ import { CsrfGuard } from './auth/guards/csrf.guard';
     AuthModule
   ],
   controllers: [AppController],
-  providers: [AppService, { provide: APP_GUARD, useClass: CsrfGuard }],
+  providers: [AppService],
 })
 export class AppModule {}

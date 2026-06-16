@@ -1,8 +1,8 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
 import { EvidenceType } from '../evidence-type.enum';
-import { Incident } from 'src/incidents/schemas/incident.schema';
-import { User } from 'src/users/schemas/user.schema';
+import { Incident } from '../../incidents/schemas/incident.schema';
+import { User } from '../../users/schemas/user.schema';
 
 export type EvidenceDocument = HydratedDocument<Evidence>;
 
