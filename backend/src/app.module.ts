@@ -7,6 +7,8 @@ import { UsersModule } from './users/users.module';
 import { IncidentsModule } from './incidents/incidents.module';
 import { EvidenceModule } from './evidence/evidence.module';
 import { AuthModule } from './auth/auth.module';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 
 @Module({
   imports: [
@@ -28,12 +30,20 @@ import { AuthModule } from './auth/auth.module';
         };
       },
     }),
+    ThrottlerModule.forRoot([{
+      ttl: 60_000,
+      limit: 100
+    }]),
     UsersModule,
     IncidentsModule,
     EvidenceModule,
     AuthModule
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService,
+    {provide: APP_GUARD,
+      useClass: ThrottlerGuard
+    }
+  ],
 })
 export class AppModule {}

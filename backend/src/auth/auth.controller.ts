@@ -11,6 +11,7 @@ import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
 import { ConfigService } from '@nestjs/config';
 import { SkipCsrf } from './decorators/skip-csrf.decorator';
 import { CsrfGuard } from './guards/csrf.guard';
+import { Throttle } from '@nestjs/throttler';
 
 
 @Controller('auth')
@@ -72,6 +73,7 @@ export class AuthController {
   }
 
   @SkipCsrf()
+  @Throttle({ default: { ttl: 60_000, limit: 5 } })
   @Post('login')
   async login(@Body() loginDto: LoginDto,
     @Res({ passthrough: true }) res: Response
@@ -84,6 +86,7 @@ export class AuthController {
   }
   
   @UseGuards(JwtRefreshGuard, CsrfGuard)
+  @Throttle({ default: { ttl: 60_000, limit: 20 } })
   @Post('refresh')
   async refresh(@Req() req: Request & { user: {sub: string; sid: string; refreshToken: string}},
     @Res({passthrough: true}) res: Response)
