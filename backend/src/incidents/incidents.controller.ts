@@ -35,8 +35,8 @@ export class IncidentsController {
     }
 
     @Patch(':id')
-    update(@Param('id') id: string, @Body() dto: UpdateIncidentDto){
-        return this.incidentsService.update(id, dto)
+    update(@Param('id') id: string, @Body() dto: UpdateIncidentDto, @Req() req: AuthenticatedRequest){
+        return this.incidentsService.update(id, dto, req.user.sub)
     }
 
     @UseGuards(RolesGuard)
