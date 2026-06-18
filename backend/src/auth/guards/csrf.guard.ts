@@ -1,8 +1,8 @@
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import type { Request } from 'express';
-import { timingSafeEqual } from 'crypto';
 import { SKIP_CSRF_KEY } from '../decorators/skip-csrf.decorator';
+import { timingSafeStringEqual } from '../timing-safe-equal';
 import { ConfigService } from '@nestjs/config';
 import { JwtPayload } from '../jwt-payload.interface';
 import { verifySignedCsrfToken } from '../csrf-token';
@@ -32,9 +32,7 @@ export class CsrfGuard implements CanActivate {
       throw new ForbiddenException('CSRF token missing');
     }
 
-    const a = Buffer.from(cookieToken);
-    const b = Buffer.from(headerToken);
-    if (a.length !== b.length || !timingSafeEqual(a, b)) {
+    if (!timingSafeStringEqual(cookieToken, headerToken)) {
       throw new ForbiddenException('CSRF token mismatch');
     }
 

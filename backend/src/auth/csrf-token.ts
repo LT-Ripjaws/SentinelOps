@@ -1,10 +1,5 @@
-import { createHmac, randomBytes, timingSafeEqual } from "crypto";
-
-function safeCompare(a: string, b: string): boolean {
-    const bufA = Buffer.from(a);
-    const bufB = Buffer.from(b);
-    return bufA.length === bufB.length && timingSafeEqual(bufA, bufB);
-}
+import { createHmac, randomBytes } from "crypto";
+import { timingSafeStringEqual } from "./timing-safe-equal";
 
 export function createSignedCsrfToken(secret: string, sid: string): string {
     const randomValue = randomBytes(32).toString('hex')
@@ -26,5 +21,5 @@ export function verifySignedCsrfToken(secret: string, sid: string, token: string
     .update(`${sid}.${randomValue}`)
     .digest('hex');
 
-    return safeCompare(signature, expectedSignature);
+    return timingSafeStringEqual(signature, expectedSignature);
 }

@@ -6,6 +6,8 @@ import { UpdateIncidentDto } from './dto/update-incident.dto';
 import { IncidentDocument, Incident } from "./schemas/incident.schema";
 import { IncidentStatus } from './incident-status.enum';
 
+const TERMINAL_STATUSES = new Set<IncidentStatus>([IncidentStatus.Resolved, IncidentStatus.Closed]);
+
 @Injectable()
 export class IncidentsService {
     constructor(@InjectModel(Incident.name) private readonly incidentModel: Model<IncidentDocument>){}
@@ -100,23 +102,18 @@ export class IncidentsService {
             });
         };
 
-        if (incidentDto.title !== undefined) {
-            trackChange('title', existingIncident.title, incidentDto.title);
-        }
+        const simpleFields = ['title', 'description', 'severity'] as const;
 
-        if (incidentDto.description !== undefined) {
-            trackChange('description', existingIncident.description, incidentDto.description);
-        }
-
-        if (incidentDto.severity !== undefined) {
-            trackChange('severity', existingIncident.severity, incidentDto.severity);
+        for (const field of simpleFields) {
+            if (incidentDto[field] !== undefined) {
+                trackChange(field, existingIncident[field], incidentDto[field]);
+            }
         }
 
         if (incidentDto.status !== undefined) {
             trackChange('status', existingIncident.status, incidentDto.status);
 
-            const terminalStatuses = new Set([IncidentStatus.Resolved, IncidentStatus.Closed]);
-            const shouldHaveResolvedAt = terminalStatuses.has(incidentDto.status);
+            const shouldHaveResolvedAt = TERMINAL_STATUSES.has(incidentDto.status);
 
             if (shouldHaveResolvedAt && !existingIncident.resolvedAt) {
                 updateData.resolvedAt = changedAt;

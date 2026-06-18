@@ -5,10 +5,11 @@ import { JwtService } from '@nestjs/jwt';
 import { LoginDto } from './dto/login.dto';
 import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
-import { createHmac, timingSafeEqual, randomUUID} from 'crypto';
+import { createHmac, randomUUID} from 'crypto';
 import { JwtPayload } from './jwt-payload.interface';
 import type { StringValue } from 'ms';
 import { createSignedCsrfToken } from './csrf-token';
+import { timingSafeStringEqual } from './timing-safe-equal';
 
 @Injectable()
 export class AuthService {
@@ -23,12 +24,6 @@ export class AuthService {
   private hashToken(token: string): string {
     const secret = this.configService.getOrThrow<string>('JWT_REFRESH_SECRET');
     return createHmac('sha256', secret).update(token).digest('hex');
-  }
-
-  private safeCompare(a: string, b: string): boolean {
-    const bufA = Buffer.from(a);
-    const bufB = Buffer.from(b);
-    return bufA.length === bufB.length && timingSafeEqual(bufA, bufB);
   }
 
   private buildPayload(user: UserDocument, sid: string = randomUUID()): JwtPayload {
@@ -69,7 +64,7 @@ export class AuthService {
 
     const refreshTokenHash = this.hashToken(presentedToken);
 
-    if(!this.safeCompare(refreshTokenHash, user.refreshTokenHash)) {
+    if(!timingSafeStringEqual(refreshTokenHash, user.refreshTokenHash)) {
       await this.usersService.setRefreshTokenHash(userId, null);
       throw new UnauthorizedException('Refresh Token no longer valid');
     }
