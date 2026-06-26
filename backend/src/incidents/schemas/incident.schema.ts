@@ -64,3 +64,11 @@ export class Incident {
 }
 
 export const IncidentSchema = SchemaFactory.createForClass(Incident);
+
+IncidentSchema.index({ status: 1 });
+IncidentSchema.index({ severity: 1 });
+IncidentSchema.index({ assignedTo: 1 });
+IncidentSchema.index({ createdAt: -1 });
+IncidentSchema.index({ status: 1, severity: 1 });
+IncidentSchema.index({ title: 'text', description: 'text' });
+

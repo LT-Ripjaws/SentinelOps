@@ -41,3 +41,5 @@ export class Evidence {
 }
 
 export const EvidenceSchema = SchemaFactory.createForClass(Evidence);
+
+EvidenceSchema.index({incidentId: 1, uploadedAt: -1})
