@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards, Query} from '@nestjs/common';
 import type { Request } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -9,6 +9,7 @@ import { IncidentsService } from './incidents.service';
 import { UserRole } from '../users/user-role.enum';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CsrfGuard } from '../auth/guards/csrf.guard';
+import { FindIncidentsQueryDto } from './dto/find-incidentquery.dto';
 
 
 type AuthenticatedRequest = Request & {user: JwtPayload}
@@ -25,8 +26,8 @@ export class IncidentsController {
     }
 
     @Get()
-    findAll(){
-        return this.incidentsService.findAll();
+    findAll(@Query() query: FindIncidentsQueryDto){
+        return this.incidentsService.findAll(query);
     }
 
     @Get(':id')

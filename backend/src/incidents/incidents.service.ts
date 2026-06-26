@@ -1,10 +1,11 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model, Types } from 'mongoose';
+import { Model, Types, QueryFilter } from 'mongoose';
 import { CreateIncidentDto } from './dto/create-incident.dto';
 import { UpdateIncidentDto } from './dto/update-incident.dto';
 import { IncidentDocument, Incident } from "./schemas/incident.schema";
 import { IncidentStatus } from './incident-status.enum';
+import { FindIncidentsQueryDto } from './dto/find-incidentquery.dto';
 
 const TERMINAL_STATUSES = new Set<IncidentStatus>([IncidentStatus.Resolved, IncidentStatus.Closed]);
 
@@ -40,8 +41,35 @@ export class IncidentsService {
 
     }
 
-    async findAll() {
-        return await this.incidentModel.find().sort({createdAt: -1}).populate('assignedTo', 'name email role').populate('createdBy', 'name email role').exec();
+    async findAll(query: FindIncidentsQueryDto) {
+        const { status, severity, search, page = 1, limit = 10 } = query;
+
+        const filter: QueryFilter<IncidentDocument> = {}
+
+        if (status) {
+            filter.status = status;
+        }
+        
+         if (severity) {
+            filter.severity = severity;
+        }
+
+        if (search) {
+            filter.$text = { $search: search };
+        }
+
+        const skip = (page - 1) * limit;
+
+        const [items, total] = await Promise.all([
+            this.incidentModel.find(filter).sort({ createdAt : -1}).skip(skip).limit(limit)
+            .populate('assignedTo', 'name email role')
+            .populate('createdBy', 'name email role')
+            .exec(), 
+            this.incidentModel.countDocuments(filter).exec()
+        ])
+
+        return {items, meta:{total, page, limit, totalPages: Math.ceil(total/limit)}}
+
     }
 
     async findOne(id: string) {
