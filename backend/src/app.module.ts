@@ -9,6 +9,7 @@ import { EvidenceModule } from './evidence/evidence.module';
 import { AuthModule } from './auth/auth.module';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -37,7 +38,8 @@ import { APP_GUARD } from '@nestjs/core';
     UsersModule,
     IncidentsModule,
     EvidenceModule,
-    AuthModule
+    AuthModule,
+    DashboardModule
   ],
   controllers: [AppController],
   providers: [AppService,
