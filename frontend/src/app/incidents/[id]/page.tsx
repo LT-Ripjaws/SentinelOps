@@ -63,7 +63,7 @@ export default function IncidentDetailPage(){
     useEffect(() => {
         let ignore = false;
 
-        async function loadIncidentPage() {
+    async function loadIncidentPage() {
         try {
             const [incidentResponse, evidenceResponse] = await Promise.all([
             api.get<IncidentDetail>(`/incidents/${params.id}`),
