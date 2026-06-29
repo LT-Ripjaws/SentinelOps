@@ -1,13 +1,15 @@
 import type {} from 'multer';
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { CreateEvidenceDto } from './dto/create-evidence.dto';
 import { Evidence, EvidenceDocument } from './schemas/evidence.schema';
+import { IncidentsService } from '../incidents/incidents.service';
 
 @Injectable()
 export class EvidenceService {
-    constructor(@InjectModel(Evidence.name) private readonly evidenceModel: Model<EvidenceDocument>){
+    constructor(@InjectModel(Evidence.name) private readonly evidenceModel: Model<EvidenceDocument>,
+    private readonly incidentsService: IncidentsService){
         
     }
 
@@ -20,10 +22,12 @@ export class EvidenceService {
     }
 
     async create(incidentId: string, file: Express.Multer.File, dto: CreateEvidenceDto, uploadedBy: string)
-    {
+    {   
         if(!file){
             throw new BadRequestException("Evidence file is required")
         }
+
+        await this.incidentsService.findOne(incidentId) // checking if the incident exists, it already throws an exception
 
         return this.evidenceModel.create({
             incidentId: this.toObjectId(incidentId),

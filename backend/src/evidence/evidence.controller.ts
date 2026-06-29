@@ -1,4 +1,4 @@
-import { Body, Get, Controller, Param, Post, Req, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Body, Get, Controller, Param, Post, Req, UploadedFile, UseGuards, UseInterceptors, BadRequestException } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Request } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -69,12 +69,34 @@ export class EvidenceController {
         description: 'Missing, mismatched, or invalid CSRF token',
     })
     @Post()
-    @UseInterceptors(FileInterceptor('file', {dest: './uploads'}))
+    @UseInterceptors(FileInterceptor('file', {
+        dest: './uploads',
+        limits: {
+            fileSize: 7 * 1024 * 1024, // 7mb
+        } ,
+        fileFilter: (req, file, cb) => {
+            const allowedMimeTypes = [
+                'image/png',
+                'image/jpeg',
+                'text/plain',
+                'application/pdf',
+                'application/json',  
+            ]
+
+            if (!allowedMimeTypes.includes(file.mimetype)) {
+            return cb(new BadRequestException('Unsupported file type'), false);
+        }
+
+        cb(null, true);
+        }
+    }))
     create(@Param('incidentId') incidentId: string, @UploadedFile() file: Express.Multer.File,
             @Body() dto: CreateEvidenceDto, @Req() req: AuthenticatedReq)
             {
                 return this.evidenceService.create(incidentId, file, dto, req.user.sub)
             }
+
+
 
     @ApiOperation({ summary: 'List evidence for an incident' })
     @ApiOkResponse({
