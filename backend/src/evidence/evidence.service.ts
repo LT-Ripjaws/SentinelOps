@@ -1,4 +1,5 @@
 import type {} from 'multer';
+import { unlink } from 'fs/promises';
 import { BadRequestException, Injectable} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
@@ -27,19 +28,35 @@ export class EvidenceService {
             throw new BadRequestException("Evidence file is required")
         }
 
-        await this.incidentsService.findOne(incidentId) // checking if the incident exists, it already throws an exception
+        // Multer has already written the upload to disk by the time we reach this point,
+        // so any failure below (invalid/unknown incident, DB error) must remove the
+        // orphaned file — otherwise repeated failed uploads would fill the disk.
+        try {
+            await this.incidentsService.findOne(incidentId) // checking if the incident exists, it already throws an exception
 
-        return this.evidenceModel.create({
-            incidentId: this.toObjectId(incidentId),
-            type: dto.type,
-            note: dto.note,
-            filePath: file.path,
-            originalName: file.originalname,
-            mimeType: file.mimetype,
-            size: file.size,
-            uploadedBy: this.toObjectId(uploadedBy),
-            uploadedAt: new Date()
-        })
+            return await this.evidenceModel.create({
+                incidentId: this.toObjectId(incidentId),
+                type: dto.type,
+                note: dto.note,
+                filePath: file.path,
+                originalName: file.originalname,
+                mimeType: file.mimetype,
+                size: file.size,
+                uploadedBy: this.toObjectId(uploadedBy),
+                uploadedAt: new Date()
+            })
+        } catch (error) {
+            await this.removeUploadedFile(file.path);
+            throw error;
+        }
+    }
+
+    private async removeUploadedFile(filePath: string): Promise<void> {
+        try {
+            await unlink(filePath);
+        } catch {
+            // best effort: the file may already be gone or never have been written
+        }
     }
 
     async findByIncident(incidentId: string){
