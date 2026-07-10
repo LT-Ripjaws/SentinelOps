@@ -30,7 +30,7 @@ export class EvidenceService {
 
         // Multer has already written the upload to disk by the time we reach this point,
         // so any failure below (invalid/unknown incident, DB error) must remove the
-        // orphaned file — otherwise repeated failed uploads would fill the disk.
+        // orphaned file, otherwise repeated failed uploads would fill the disk.
         try {
             await this.incidentsService.findOne(incidentId) // checking if the incident exists, it already throws an exception
 
